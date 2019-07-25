@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "defaultSchema": "LISTING_MANAGEMENT",
+  "schemas": [
+    {
+      "name": "LISTING_MANAGEMENT",
+      "type": "custom",
+      "factory": "com.limestone.LimestoneSchemaFactory",
+      "operand": {
+        "directory": "build/resources/test/listing_management"
+      }
+    }
+  ]
+}

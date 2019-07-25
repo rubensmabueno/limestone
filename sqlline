@@ -1,0 +1,35 @@
+#!/bin/bash
+# sqlline - Script to launch SQL shell
+#
+# Example:
+# $ ./sqlline
+# sqlline> !connect jdbc:calcite:model=build/resources/test/limestone.json admin admin
+
+# Deduce whether we are running cygwin
+case $(uname -s) in
+(CYGWIN*) cygwin=true;;
+(*) cygwin=;;
+esac
+
+gradle clean
+
+# Build classpath on first call. (To force rebuild, remove .classpath.txt.)
+cd $(dirname $0)
+if [ ! -f build/classpath.txt ]; then
+    gradle build
+    gradle buildClasspath
+fi
+
+CP="build/classes/java/main:build/classes/test:$(cat build/classpath.txt):build/resources/main"
+VM_OPTS=
+if [ "$cygwin" ]; then
+  CP=$(cygpath -wp "$CP")
+
+  # Work around https://github.com/jline/jline2/issues/62
+  VM_OPTS=-Djline.terminal=jline.UnixTerminal
+fi
+
+exec java $VM_OPTS -cp "${CP}" sqlline.SqlLine "$@"
+#exec java $VM_OPTS -cp "${CP}" -Dcalcite.debug=true sqlline.SqlLine "$@"
+
+# End sqlline
