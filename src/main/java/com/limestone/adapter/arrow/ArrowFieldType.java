@@ -1,5 +1,6 @@
 package com.limestone.adapter.arrow;
 
+import org.apache.arrow.vector.types.FloatingPointPrecision;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 
 import org.apache.calcite.adapter.java.JavaTypeFactory;
@@ -13,9 +14,10 @@ import java.util.Map;
 public enum ArrowFieldType {
     STRING(String.class, ArrowType.Utf8.class, "string"),
     BOOLEAN(Primitive.BOOLEAN, ArrowType.Bool.class),
-    BYTE(Primitive.BYTE, ArrowType.Binary.class),
     INT(Primitive.INT, ArrowType.Int.class),
+    LONG(Primitive.LONG, ArrowType.Int.class, "long"),
     FLOAT(Primitive.FLOAT, ArrowType.FloatingPoint.class),
+    DOUBLE(Primitive.DOUBLE, ArrowType.FloatingPoint.class, "double"),
     DATE(java.sql.Date.class, ArrowType.Date.class, "date"),
     TIME(java.sql.Time.class, ArrowType.Time.class, "time"),
     TIMESTAMP(java.sql.Timestamp.class, ArrowType.Timestamp.class, "timestamp");
@@ -36,6 +38,12 @@ public enum ArrowFieldType {
 
     ArrowFieldType(Primitive primitive, Class arrowClass) {
         this(primitive.boxClass, arrowClass, primitive.primitiveName);
+    }
+
+    ArrowFieldType(Primitive primitive, Class arrowClass, String simpleName) {
+        this.primitiveClass = primitive.boxClass;
+        this.arrowClass = arrowClass;
+        this.simpleName = simpleName;
     }
 
     ArrowFieldType(Class primitiveClass, Class arrowClass, String simpleName) {
@@ -62,6 +70,8 @@ public enum ArrowFieldType {
         try {
             if (this.arrowClass == ArrowType.Int.class) {
                 arrowType = new ArrowType.Int(32, true);
+            } else if (this.primitiveClass == Primitive.DOUBLE.boxClass) {
+                arrowType = new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE);
             } else {
                 arrowType = this.arrowClass.newInstance();
             }

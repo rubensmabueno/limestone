@@ -10,7 +10,6 @@ import org.apache.calcite.linq4j.Queryable;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.type.RelProtoDataType;
 import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Schemas;
@@ -21,8 +20,8 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 public class ArrowTranslatableTable extends ArrowTable implements QueryableTable, TranslatableTable {
-    public ArrowTranslatableTable(List<VectorSchemaRoot> vectorSchemaRoots, RelProtoDataType protoRowType) {
-        super(vectorSchemaRoots, protoRowType);
+    public ArrowTranslatableTable(List<VectorSchemaRoot> vectorSchemaRoots) {
+        super(vectorSchemaRoots, null);
     }
 
     public String toString() {

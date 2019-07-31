@@ -9,17 +9,12 @@ import org.apache.calcite.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
 
-class ArrowEnumerator<E> implements Enumerator<E> {
+public class ArrowEnumerator<E> implements Enumerator<E> {
     private final List<VectorSchemaRoot> vectorSchemaRoots;
     private final int[] fields;
     private int index;
     private int currentPos;
-
-    ArrowEnumerator(List<VectorSchemaRoot> vectorSchemaRoots) {
-        this(vectorSchemaRoots, IntStream.rangeClosed(0, vectorSchemaRoots.get(0).getFieldVectors().size() - 1).toArray());
-    }
 
     ArrowEnumerator(List<VectorSchemaRoot> vectorSchemaRoots, int[] fields) {
         this.vectorSchemaRoots = vectorSchemaRoots;

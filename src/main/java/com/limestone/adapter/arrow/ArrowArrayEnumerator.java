@@ -2,10 +2,7 @@ package com.limestone.adapter.arrow;
 
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
-import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.linq4j.Enumerator;
-import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,20 +23,6 @@ class ArrowArrayEnumerator<E> implements Enumerator<List<E>> {
         this.fields = fields;
         this.index = 0;
         this.currentPos= 0;
-    }
-
-    public static RelDataType deduceRowType(JavaTypeFactory typeFactory, VectorSchemaRoot vectorSchemaRoot) {
-        final List<RelDataType> types = new ArrayList<>();
-        final List<String> names = new ArrayList<>();
-
-        for(FieldVector fieldVector : vectorSchemaRoot.getFieldVectors()) {
-            RelDataType relDataType = ArrowFieldType.of(fieldVector.getField().getType()).toType(typeFactory);
-
-            names.add(fieldVector.getField().getName().toUpperCase());
-            types.add(relDataType);
-        }
-
-        return typeFactory.createStructType(Pair.zip(names, types));
     }
 
     @Override public void close() {}

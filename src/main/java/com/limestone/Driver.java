@@ -18,7 +18,9 @@ class Driver {
         properties.put("lex", "JAVA");
         Connection conn = DriverManager.getConnection(url, properties);
 
-        String sql = "SELECT * FROM LISTINGS LIMIT 2";
+//        String sql = "SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, GENDER, IP_ADDRESS, CC, COUNTRY, BIRTHDATE, SALARY, TITLE, COMMENTS FROM USERS LIMIT 12";
+        String sql = "SELECT COUNTRY, AVG(SALARY) FROM USERS GROUP BY COUNTRY";
+
         AsciiTable at = new AsciiTable();
 
         try(ResultSet rs = conn.createStatement().executeQuery(sql)) {
@@ -35,7 +37,12 @@ class Driver {
                 List<String> resultRow = new ArrayList<>();
                 for (int i=1;i<columnCount+1;i++) {
                     Object object = rs.getObject(i);
-                    resultRow.add(object.toString());
+
+                    if(object == null) {
+                        resultRow.add("NULL");
+                    } else {
+                        resultRow.add(object.toString());
+                    }
                 }
                 at.addRow(resultRow);
 
