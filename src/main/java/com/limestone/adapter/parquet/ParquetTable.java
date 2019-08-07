@@ -60,7 +60,7 @@ public class ParquetTable extends AbstractQueryableTable implements Translatable
 
         return new AbstractEnumerable<Object>() {
             public Enumerator<Object> enumerator() {
-                return new ParquetEnumerator(file, new AtomicBoolean(false), resultRowType, predicate);
+                return new ParquetEnumerator(file, new AtomicBoolean(false), resultRowType);
             }
         };
     }
@@ -76,4 +76,6 @@ public class ParquetTable extends AbstractQueryableTable implements Translatable
     public <T> Queryable<T> asQueryable(QueryProvider queryProvider, SchemaPlus schema, String tableName) {
         throw new UnsupportedOperationException();
     }
+
+    public File getFile() { return this.file; }
 }

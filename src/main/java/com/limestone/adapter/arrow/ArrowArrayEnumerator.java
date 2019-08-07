@@ -3,28 +3,35 @@ package com.limestone.adapter.arrow;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.calcite.linq4j.Enumerator;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeField;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
+import org.apache.calcite.rel.type.RelProtoDataType;
+import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.IntStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 class ArrowArrayEnumerator<E> implements Enumerator<List<E>> {
     private final List<VectorSchemaRoot> vectorSchemaRoots;
-    private final int[] fields;
+    private final List<RelDataTypeField> fieldTypes;
+    private final AtomicBoolean cancel;
+
     private int index;
     private int currentPos;
 
-    ArrowArrayEnumerator(List<VectorSchemaRoot> vectorSchemaRoots) {
-        this(vectorSchemaRoots, IntStream.rangeClosed(0, vectorSchemaRoots.get(0).getFieldVectors().size() - 1).toArray());
-    }
+    ArrowArrayEnumerator(List<VectorSchemaRoot> vectorSchemaRoots, AtomicBoolean cancel, RelProtoDataType protoRowType) {
+        final RelDataTypeFactory typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
 
-    ArrowArrayEnumerator(List<VectorSchemaRoot> vectorSchemaRoots, int[] fields) {
         this.vectorSchemaRoots = vectorSchemaRoots;
-        this.fields = fields;
+
+        this.cancel = cancel;
+        this.fieldTypes = protoRowType.apply(typeFactory).getFieldList();
+
         this.index = 0;
         this.currentPos= 0;
     }
-
     @Override public void close() {}
 
     @Override public void reset() {
@@ -47,8 +54,8 @@ class ArrowArrayEnumerator<E> implements Enumerator<List<E>> {
     @Override public List<E> current() {
         List<E> fieldValues = new ArrayList<>();
 
-        for(int field : this.fields) {
-            fieldValues.set(field, this.getObject(field));
+        for(RelDataTypeField field : this.fieldTypes) {
+            fieldValues.set(field.getIndex(), this.getObject(field.getIndex()));
         }
 
         return fieldValues;

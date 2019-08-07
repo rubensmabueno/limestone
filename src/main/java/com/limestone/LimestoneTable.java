@@ -1,11 +1,11 @@
 package com.limestone;
 
 import com.limestone.adapter.arrow.ArrowTranslatableTable;
-import com.limestone.adapter.parquet.ParquetRel;
 import com.limestone.adapter.parquet.ParquetTable;
 import com.limestone.adapter.arrow.ArrowFieldType;
 
 import org.apache.arrow.vector.VectorSchemaRoot;
+import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.AbstractQueryableTable;
 import org.apache.calcite.linq4j.*;
 import org.apache.calcite.plan.RelOptTable;
@@ -14,6 +14,7 @@ import org.apache.calcite.rel.type.*;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.TranslatableTable;
 import org.apache.calcite.sql.type.SqlTypeFactoryImpl;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -55,6 +56,32 @@ public class LimestoneTable extends AbstractQueryableTable implements Translatab
         return LimestoneEnumerator.deduceRowType(typeFactory, this.tableSchema);
     }
 
+    public Enumerable<Object> project(DataContext root, int[] fields) {
+        final RelDataTypeFactory typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
+        final RelDataTypeFactory.Builder fieldInfo = typeFactory.builder();
+        final RelDataType rowType = getRowType(typeFactory);
+
+        if (fields.length == 0) {
+            for (RelDataTypeField relDataTypeField : rowType.getFieldList()) {
+                fieldInfo.add(relDataTypeField);
+            }
+        } else {
+            List<Field> fieldList = getFieldList(this.tableSchema);
+
+            for (int field : fields) {
+                fieldInfo.add(rowType.getField((fieldList.get(field).getName()).toUpperCase(), true, false));
+            }
+        }
+
+        final RelProtoDataType resultRowType = RelDataTypeImpl.proto(fieldInfo.build());
+
+        return new AbstractEnumerable<Object>() {
+            public Enumerator<Object> enumerator() {
+                return new LimestoneEnumerator<>(arrowTable, parquetTable, resultRowType);
+            }
+        };
+    }
+
     public Enumerable<Object> runQuery(final List<String> fields, final String predicate) {
         final RelDataTypeFactory typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
         final RelDataTypeFactory.Builder fieldInfo = typeFactory.builder();
@@ -74,14 +101,14 @@ public class LimestoneTable extends AbstractQueryableTable implements Translatab
 
         return new AbstractEnumerable<Object>() {
             public Enumerator<Object> enumerator() {
-                return new LimestoneEnumerator(resultRowType);
+                return new LimestoneEnumerator(arrowTable, parquetTable, resultRowType);
             }
         };
     }
 
     @Override
     public RelNode toRel(RelOptTable.ToRelContext context, RelOptTable relOptTable) {
-        return new LimestoneTableScan(context.getCluster(), context.getCluster().traitSetOf(ParquetRel.CONVENTION), relOptTable, this, relOptTable.getRowType());
+        return new LimestoneTableScan(context.getCluster(), relOptTable, this.parquetTable, this.arrowTable, relOptTable.getRowType());
     }
 
     @Override
@@ -89,20 +116,26 @@ public class LimestoneTable extends AbstractQueryableTable implements Translatab
         throw new UnsupportedOperationException();
     }
 
+    private List<Field> getFieldList(JSONObject tableSchema) {
+        List<Field> fieldList = new ArrayList<>();
+
+        for(Object oName : (JSONArray) tableSchema.get("columns")) {
+            String name = (String) ((JSONObject) oName ).get("name");
+            String type = (String) ((JSONObject) oName ).get("type");
+
+            ArrowFieldType arrowFieldType = ArrowFieldType.ofSimple(type);
+
+            fieldList.add(new Field(name.toUpperCase(), FieldType.nullable(arrowFieldType.getArrowType()), new ArrayList<>()));
+        }
+
+        return fieldList;
+    }
+
     private List<VectorSchemaRoot> getArrowSchema(JSONObject tableSchema) throws IOException {
         List<VectorSchemaRoot> vectorSchemaRoots = new ArrayList<>();
         FileOutputStream fileOutputStream = new FileOutputStream(new File("/tmp/test.arrow"));
 
-        List<Field> fieldList = new ArrayList<>();
-
-        for(Object oName : tableSchema.keySet()) {
-            String name = (String) oName;
-            String type = (String) tableSchema.get(name);
-
-            ArrowFieldType arrowFieldType = ArrowFieldType.ofSimple(type);
-
-            fieldList.add(new Field(name, FieldType.nullable(arrowFieldType.getArrowType()), new ArrayList<>()));
-        }
+        List<Field> fieldList = getFieldList(tableSchema);
 
         Schema schema = new Schema(fieldList);
 

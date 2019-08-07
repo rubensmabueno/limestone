@@ -19,7 +19,7 @@ class Driver {
         Connection conn = DriverManager.getConnection(url, properties);
 
 //        String sql = "SELECT ID, FIRST_NAME, LAST_NAME, EMAIL, GENDER, IP_ADDRESS, CC, COUNTRY, BIRTHDATE, SALARY, TITLE, COMMENTS FROM USERS LIMIT 12";
-        String sql = "SELECT COUNTRY, AVG(SALARY) FROM USERS GROUP BY COUNTRY";
+        String sql = "SELECT SUM(SALARY) FROM LISTINGS LIMIT 10";
 
         AsciiTable at = new AsciiTable();
 

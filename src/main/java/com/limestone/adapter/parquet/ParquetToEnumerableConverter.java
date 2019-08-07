@@ -33,23 +33,19 @@ public class ParquetToEnumerableConverter extends ConverterImpl implements Enume
         parquetImplementor.visitChild(0, getInput());
 
         final Expression table =
-                list.append("table",
-                        parquetImplementor.table.getExpression(ParquetTable.class));
+                list.append("table", parquetImplementor.table.getExpression(ParquetTable.class));
 
         final Expression fields =
-                list.append("fields",
-                        constantArrayList(parquetImplementor.projectedFields, String.class));
+                list.append("fields", constantArrayList(parquetImplementor.projectedFields, String.class));
 
         final Expression predicates =
-                list.append("predicates",
-                        Expressions.constant(parquetImplementor.getFilter()));
+                list.append("predicates", Expressions.constant(parquetImplementor.getFilter()));
 
         Expression enumerable =
-                list.append("enumerable",
-                        Expressions.call(table, "runQuery", fields, predicates));
-        //Hook.QUERY_PLAN.run(predicates);
-        list.add(
-                Expressions.return_(null, enumerable));
+                list.append("enumerable", Expressions.call(table, "runQuery", fields, predicates));
+
+        list.add(Expressions.return_(null, enumerable));
+
         return implementor.result(physType, list.toBlock());
     }
 

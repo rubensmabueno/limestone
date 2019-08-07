@@ -25,13 +25,14 @@ public class ParquetEnumerator<E> implements Enumerator<E> {
     private final AtomicBoolean cancel;
     private final List<RelDataTypeField> fieldTypes;
 
-    public ParquetEnumerator(File fileToRead, AtomicBoolean cancel, RelProtoDataType protoRowType, String predicate) {
-        this.cancel = cancel;
+    public ParquetEnumerator(File file, AtomicBoolean cancel, RelProtoDataType protoRowType) {
         final RelDataTypeFactory typeFactory = new SqlTypeFactoryImpl(RelDataTypeSystem.DEFAULT);
+
+        this.cancel = cancel;
         this.fieldTypes = protoRowType.apply(typeFactory).getFieldList();
 
         try {
-            this.reader = ParquetReader.builder(new SimpleReadSupport(), new Path(fileToRead.toURI())).build();
+            this.reader = ParquetReader.builder(new SimpleReadSupport(), new Path(file.toURI())).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

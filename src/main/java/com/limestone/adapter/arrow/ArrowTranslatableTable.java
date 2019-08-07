@@ -10,6 +10,8 @@ import org.apache.calcite.linq4j.Queryable;
 import org.apache.calcite.linq4j.tree.Expression;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.schema.QueryableTable;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Schemas;
@@ -17,6 +19,7 @@ import org.apache.calcite.schema.TranslatableTable;
 
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
 public class ArrowTranslatableTable extends ArrowTable implements QueryableTable, TranslatableTable {
@@ -31,9 +34,14 @@ public class ArrowTranslatableTable extends ArrowTable implements QueryableTable
     public Enumerable<Object> project(final DataContext root, final int[] fields) {
         return new AbstractEnumerable<Object>() {
             public Enumerator<Object> enumerator() {
-                return new ArrowEnumerator<>(vectorSchemaRoots, fields);
+                return new ArrowEnumerator<>(vectorSchemaRoots, new AtomicBoolean(false), protoRowType);
             }
         };
+    }
+
+    @Override
+    public RelDataType getRowType(RelDataTypeFactory typeFactory) {
+        return ArrowEnumerator.deduceRowType(typeFactory, vectorSchemaRoots);
     }
 
     public Expression getExpression(SchemaPlus schema, String tableName, Class clazz) {
